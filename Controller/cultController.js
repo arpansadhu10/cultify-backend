@@ -22,8 +22,153 @@ export const createCult = async (req, res, next) => {
 
 export const getAllCults = async (req, res, next) => {
     try {
-        const cults = await Cult.find({});
-        res.status(200).json({ data: cults, message: "cult fetched" });
+        const search = req.query.search;
+        if (search === undefined) {
+            const cults = await Cult.find({});
+            return res.status(200).json({ data: cults, message: "cult fetched" });
+        }
+        let page = parseInt(req.query.page);
+        let limit = parseInt(req.query.limit, 10);
+        if (!page) {
+            page = 1;
+        }
+        if (!limit) {
+            limit = 10;
+        }
+        console.log(page, limit);
+        const paginationOptions = { page, limit }
+        const skip = limit * (page - 1);
+        const paginationStage1 = {
+            $facet: {
+                total: [
+                    {
+                        $count: 'createdAt',
+                    },
+                ],
+                data: [
+                    {
+                        $addFields: {
+                            _id: '$_id',
+                        },
+                    },
+                ],
+            },
+        };
+        const paginationStage2 = {
+            $unwind: '$total',
+        };
+        const paginationStage3 = {
+            $project: {
+                cults: {
+                    $slice: ['$data', skip, limit],
+                },
+                pagination: {
+                    totalDocs: '$total.createdAt',
+                    hasPrevPage: {
+                        $gt: [skip / limit, 0],
+                    },
+                    hasNextPage: {
+                        $gt: [
+                            {
+                                $ceil: {
+                                    $divide: ['$total.createdAt', limit],
+                                },
+                            },
+                            {
+                                $add: [skip / limit, 1],
+                            },
+                        ],
+                    },
+                    prevPage: {
+                        $cond: {
+                            if: {
+                                $gt: [skip / limit, 0],
+                            },
+                            then: skip / limit,
+                            else: null,
+                        },
+                    },
+                    nextPage: {
+                        $cond: {
+                            if: {
+                                $gt: [
+                                    {
+                                        $ceil: {
+                                            $divide: ['$total.createdAt', limit],
+                                        },
+                                    },
+                                    {
+                                        $add: [skip / limit, 1],
+                                    },
+                                ],
+                            },
+                            then: {
+                                $add: [skip / limit, 2],
+                            },
+                            else: null,
+                        },
+                    },
+                    limit: {
+                        $literal: limit,
+                    },
+                    pagingCounter: {
+                        $add: [skip / limit, 1],
+                    },
+                    totalPages: {
+                        $ceil: {
+                            $divide: ['$total.createdAt', limit],
+                        },
+                    },
+                },
+            },
+        };
+        const searchParam =
+        {
+            $match: {
+                $or: [
+                    {
+                        name: {
+                            $regex: search,
+                            '$options': 'i',
+                        },
+                    },
+                    {
+                        description: {
+                            $regex: search,
+                            '$options': 'i',
+                        },
+                    },
+
+
+                ],
+
+            },
+        };
+
+        const topCults = await Cult.aggregate([
+            searchParam,
+            paginationStage1, paginationStage2, paginationStage3
+
+        ]);
+        console.log(topCults);
+        if (topCults[0]) {
+            return res.status(200).json({ data: topCults, message: "top cults fetched" });
+        }
+
+
+        return {
+            cults: [],
+            pagination: {
+                totalDocs: 0,
+                hasPrevPage: false,
+                hasNextPage: false,
+                prevPage: null,
+                nextPage: null,
+                limit: paginationOptions.limit,
+                pagingCounter: paginationOptions.page,
+                totalPages: 1,
+            },
+        };
 
     } catch (err) {
         next(err);
@@ -162,4 +307,6 @@ export const getTopCults = async (req, res, next) => {
         next(err);
     }
 }
+
+
 
