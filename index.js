@@ -1,7 +1,7 @@
 import express from 'express';
 import 'dotenv/config'
 import cors from 'cors'
-import router from './Router/index.js';
+import router from './router/index.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 import APIError from './utils/APIError.js';
 import { connectDB } from './utils/db.js';
