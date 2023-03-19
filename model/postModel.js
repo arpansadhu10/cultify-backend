@@ -1,14 +1,17 @@
 import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    numberOfPeopleJoined: { type: Number },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
     description: { type: String },
     image: { type: String },
-    likes: { type: Number },
-    cult: { type: mongoose.Schema.Types.ObjectId, ref: 'cult' }
-})
+    likes: { type: Number, default: 0 },
+    cult: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'cult' },
+    numberOfComments: { type: Number, default: 0 }
+},
+    {
+        timestamps: true,
+    })
 
-const Cult = mongoose.model("cult", postSchema);
+const Post = mongoose.model("post", postSchema);
 
-export default Cult;
+export default Post;

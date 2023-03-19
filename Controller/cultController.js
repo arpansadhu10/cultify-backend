@@ -1,4 +1,5 @@
 import Cult from "../model/cultModel.js";
+import User from "../model/userModel.js";
 import APIError from "../utils/APIError.js";
 
 export const createCult = async (req, res, next) => {
@@ -156,7 +157,7 @@ export const getAllCults = async (req, res, next) => {
         }
 
 
-        return {
+        const obj = {
             cults: [],
             pagination: {
                 totalDocs: 0,
@@ -169,6 +170,7 @@ export const getAllCults = async (req, res, next) => {
                 totalPages: 1,
             },
         };
+        return res.status(404).json({ data: obj, message: "No cults found" });
 
     } catch (err) {
         next(err);
@@ -289,7 +291,7 @@ export const getTopCults = async (req, res, next) => {
         }
 
 
-        return {
+        const obj = {
             cults: [],
             pagination: {
                 totalDocs: 0,
@@ -302,6 +304,80 @@ export const getTopCults = async (req, res, next) => {
                 totalPages: 1,
             },
         };
+        return res.status(404).json({ data: obj, message: "No cults found" });
+
+
+    } catch (err) {
+        next(err);
+    }
+}
+
+
+export const joinCult = async (req, res, next) => {
+    try {
+        const cultId = req.params.cult;
+        const cult = await Cult.findById(cultId);
+        if (!cult) {
+            throw new APIError("Cult not found", 404);
+        }
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new APIError("User not found", 404);
+        }
+        let flag = false;
+        user.joinedCults.map((i) => {
+            if (String(i) === String(cultId)) {
+                flag = true;
+                throw new APIError("Already added", 400);
+            }
+        });
+        user.joinedCults.push(cultId);
+        await user.save();
+        //increment cult joined count
+
+        cult.numberOfPeopleJoined += 1;
+        await cult.save();
+        res.status(200).json({ data: user, message: "user added to cult" });
+
+    } catch (err) {
+        next(err);
+    }
+}
+export const leaveCult = async (req, res, next) => {
+    try {
+        const cultId = req.params.cult;
+        const cult = await Cult.findById(cultId);
+        if (!cult) {
+            throw new APIError("Cult not found", 404);
+        }
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new APIError("User not found", 404);
+        }
+
+
+        let flag = -1;
+        user.joinedCults.map((i, index) => {
+            if (String(i) === String(cultId)) {
+                flag = index;
+            }
+        });
+        if (flag === -1) {
+            throw new APIError("user not added to cult", 400);
+            // return res.status(200).json({ data: user, message: "user added to cult" });
+
+        }
+        user.joinedCults.splice(flag, 1);
+        await user.save();
+
+        //increment cult joined count
+        if (cult.numberOfPeopleJoined > 0) {
+            cult.numberOfPeopleJoined -= 1;
+            await cult.save();
+        }
+        return res.status(200).json({ data: user, message: "user deleted from cult" });
 
     } catch (err) {
         next(err);
