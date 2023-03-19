@@ -25,7 +25,7 @@ export const getAllCults = async (req, res, next) => {
         const search = req.query.search;
         if (search === undefined) {
             const cults = await Cult.find({});
-            return res.status(200).json({ data: cults, message: "cult fetched" });
+            return res.status(200).json({ data: { cults: cults }, message: "cult fetched" });
         }
         let page = parseInt(req.query.page);
         let limit = parseInt(req.query.limit, 10);
@@ -145,14 +145,14 @@ export const getAllCults = async (req, res, next) => {
             },
         };
 
-        const topCults = await Cult.aggregate([
+        const cults = await Cult.aggregate([
             searchParam,
             paginationStage1, paginationStage2, paginationStage3
 
         ]);
-        console.log(topCults);
-        if (topCults[0]) {
-            return res.status(200).json({ data: topCults, message: "top cults fetched" });
+        console.log(cults);
+        if (cults[0]) {
+            return res.status(200).json({ data: cults[0], message: "top cults fetched" });
         }
 
 
