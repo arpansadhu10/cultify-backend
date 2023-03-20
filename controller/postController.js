@@ -28,6 +28,21 @@ export const createPost = async (req, res, next) => {
     }
 }
 
+export const getAllPosts = async (req, res, next) => {
+    try {
+        const posts = await Post.find({});
+            // return res.status(200).json({ data: { posts: posts }, message: "posts fetched" });
+        if (!posts) {
+            throw new APIError("Post Not Found", 404);
+        }
+        console.log(posts);
+        return res.status(200).json({ data: posts , message: "All posts fetched" });
+
+    } catch (err) {
+        next(err);
+    }
+}
+
 export const likePost = async (req, res, next) => {
     try {
         const userId = req.user._id;
