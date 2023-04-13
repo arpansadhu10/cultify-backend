@@ -5,6 +5,7 @@ import PostRouter from "./postRouter.js";
 import sampleRouter from "./sample.js";
 import UploadRouter from "./upload.js";
 import userRouter from "./user.js";
+import FeedRouter from "./feed.js";
 
 
 const router = Router();
@@ -19,6 +20,7 @@ router.use('/user', userRouter);
 router.use('/upload', UploadRouter);
 router.use('/cult', CultRouter);
 router.use('/post', PostRouter);
+router.use('/feed', FeedRouter);
 
 
 

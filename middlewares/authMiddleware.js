@@ -1,7 +1,6 @@
 
 
 import User from '../model/userModel.js';
-// const jwt = require("jsonwebtoken");
 import Jwt from 'jsonwebtoken';
 import APIError from '../utils/APIError.js';
 
